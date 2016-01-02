@@ -9,6 +9,8 @@
 class chessAI {
    public:
 	 	std::vector<std::vector<char> > board;
+	 	std::vector<std::vector<char> > best_board;
+	 	bool terminal_found;
 
 	 	void setBoard(std::vector<std::vector<char> > in) {
 	 		board = in;
@@ -16,14 +18,13 @@ class chessAI {
 
 		std::vector<std::vector<char> > getMove(int ply){
 			std::vector<std::vector<std::vector<char> > > valid_moves;
+			terminal_found = false;
 			valid_moves = getValidMoves();
-			/*for (int i = 0 ; i < valid_moves.size(); i++) {
-				printBoard(valid_moves[i]);
-			}*/
-				printBoard(valid_moves[0]);
-				printBoard(valid_moves[1]);
-				printBoard(valid_moves[2]);
-			return valid_moves[rand () % valid_moves.size()];
+			int heur = minimax(board, 2, -10000, 10000, true);
+			std::cout << "heur= " << heur << std::endl;
+			//return valid_moves[rand () % valid_moves.size()];
+				//return valid_moves[5];
+			return best_board;
 		}	 	
 	private:
 
@@ -415,5 +416,52 @@ class chessAI {
 				}
 			}
 			return valid_moves;
+		}
+
+		//returns the larger of two integers as an integer
+		int max (int a, int b) {
+			if (a > b) return a;
+			else return b;
+		}
+		//returns the smaller of two integers as an integer
+		int min (int a, int b) {
+			if (a < b) return a;
+			else return b;
+		}
+
+		int minimax(std::vector<std::vector<char> > node, int depth, int a, int b, bool maxing){
+			if (depth == 0 || terminal_found){
+				best_board = node;
+				return evaluate(node);
+			}
+			if (maxing){
+				int v = -10000;
+				std::vector<std::vector<std::vector<char> > > valid_moves = getValidMoves();
+				for (int i = 0; i < valid_moves.size(); i++) {
+					v = max(v, minimax(valid_moves[i], depth-1, a, b, false));
+					a = max(a, v);
+					if (b <= a) break; //prune
+				}
+				return v;
+			} else {
+				int v = 10000;
+				std::vector<std::vector<std::vector<char> > > valid_moves = getValidMoves();
+				for (int i = 0; i < valid_moves.size(); i++) {
+					v = min(v, minimax(valid_moves[i], depth-1, a, b, false));
+					b = min(b, v);
+					if (b <= a) break;
+				}
+				return v;
+			}
+		}
+
+		int evaluate(std::vector<std::vector<std::vector<char> >> state) {
+			result = 0;
+			for (int i = 0; i < state.size(); i++) {
+				for (int j = 0; j < state[i].size(); j++) {
+					if (isupper(state[i][j])) result --;
+					else if (islower(state[i][j])) result ++;
+				}
+			}
 		}
 };
