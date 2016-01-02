@@ -20,7 +20,7 @@ class chessAI {
 			std::vector<std::vector<std::vector<char> > > valid_moves;
 			terminal_found = false;
 			valid_moves = getValidMoves();
-			int heur = minimax(board, 2, -10000, 10000, true);
+			int heur = minimax(board, 2, -10000, 10000, false);
 			std::cout << "heur= " << heur << std::endl;
 			//return valid_moves[rand () % valid_moves.size()];
 				//return valid_moves[5];
@@ -436,7 +436,8 @@ class chessAI {
 			}
 			if (maxing){
 				int v = -10000;
-				std::vector<std::vector<std::vector<char> > > valid_moves = getValidMoves();
+				std::vector<std::vector<std::vector<char> > > valid_moves;
+				valid_moves = getValidMoves();
 				for (int i = 0; i < valid_moves.size(); i++) {
 					v = max(v, minimax(valid_moves[i], depth-1, a, b, false));
 					a = max(a, v);
@@ -445,7 +446,8 @@ class chessAI {
 				return v;
 			} else {
 				int v = 10000;
-				std::vector<std::vector<std::vector<char> > > valid_moves = getValidMoves();
+				std::vector<std::vector<std::vector<char> > > valid_moves;
+				valid_moves = getValidMoves();
 				for (int i = 0; i < valid_moves.size(); i++) {
 					v = min(v, minimax(valid_moves[i], depth-1, a, b, false));
 					b = min(b, v);
@@ -455,8 +457,8 @@ class chessAI {
 			}
 		}
 
-		int evaluate(std::vector<std::vector<std::vector<char> >> state) {
-			result = 0;
+		int evaluate(std::vector<std::vector<char> > state) {
+			int result = 0;
 			for (int i = 0; i < state.size(); i++) {
 				for (int j = 0; j < state[i].size(); j++) {
 					if (isupper(state[i][j])) result --;
