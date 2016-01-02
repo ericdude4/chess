@@ -1,0 +1,3 @@
+all:
+	g++ -std=c++11 -o chess chess.cpp -lGL -lGLU -lglut -lfreeimage -lX11
+
