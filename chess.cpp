@@ -415,14 +415,17 @@ void setActive(float x, float y) {	//this sets the location clicked as "active" 
 			glutPostRedisplay();
 			//get computer move.
 			vector<vector<char> > char_board;
+			cout << "--------------------" << endl;
 			for (int i = 0; i < 8; i ++){
 				vector<char> temp;
 				for (int j = 0; j < 8; j++){
 					temp.push_back(board[i][j].piece);
-				}
+					cout << board[i][j].piece;
+				} cout << endl;
 				char_board.push_back(temp);
 				temp.clear();
 			}
+			cout << "--------------------" << endl;
 			kasparov.setBoard(char_board);
 			char_board = kasparov.getMove(2);
 			copyCompMoveToMainBoard(char_board);

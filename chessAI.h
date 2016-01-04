@@ -20,10 +20,20 @@ class chessAI {
 			std::vector<std::vector<std::vector<char> > > valid_moves;
 			terminal_found = false;
 			valid_moves = getValidMoves();
-			int heur = minimax(board, 2, -10000, 10000, false);
-			std::cout << "heur= " << heur << std::endl;
+			int heur = minimax(board, 4, -10000, 10000, false);
+			/*for (int i = 0; i < valid_moves.size(); i++){
+				printBoard(valid_moves[i]);
+			}*/
+			
 			//return valid_moves[rand () % valid_moves.size()];
-				//return valid_moves[5];
+			/*printBoard(valid_moves[0]);
+			printBoard(valid_moves[1]);
+			printBoard(valid_moves[2]);
+			printBoard(valid_moves[3]);
+			printBoard(valid_moves[4]);
+			printBoard(valid_moves[5]);*/
+			//return valid_moves[5];
+			std::cout << "heuristic: " << heur << std::endl;
 			return best_board;
 		}	 	
 	private:
@@ -43,163 +53,207 @@ class chessAI {
 			for (int x = 0; x < 8; x++) {
 				for (int y = 0; y < 8; y++) {
 					if (board[x][y] == 'p' && board[x+1][y] == ' ') {
+						char temp = board[x+1][y];
 						board[x+1][y] = 'p';
 						board[x][y] = ' ';
 						valid_moves.push_back(board);
-						board[x+1][y] = ' ';
+						board[x+1][y] = temp;
 						board[x][y] = 'p';
-						if (x == 1 && board[x+1][y] == ' ' && board[x+2][y] == ' ') {
+						
+					}
+					if (board[x][y] == 'p' && x == 1 && board[x+1][y] == ' ' && board[x+2][y] == ' ') {
+						char temp = board[x+2][y];
 							board[x+2][y] = 'p';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+2][y] = ' ';
+							board[x+2][y] = temp;
 							board[x][y] = 'p';
 						}
-						if (isupper(board[x+1][y+1])){
-							board[x+1][y+1] = 'p';
+					if (board[x][y] == 'p' && isupper(board[x+1][y-1])){
+						char temp = board[x+1][y-1];
+						board[x+1][y-1] = 'p';
+						board[x][y] = ' ';
+						valid_moves.push_back(board);
+						board[x+1][y-1] = temp;
+						board[x][y] = 'p';
+					}
+					if (board[x][y] == 'p' && isupper(board[x+1][y+1])){
+						char temp = board[x+1][y+1];
+						board[x+1][y+1] = 'p';
+						board[x][y] = ' ';
+						valid_moves.push_back(board);
+						board[x+1][y+1] = temp;
+						board[x][y] = 'p';
+					}
+					if (board[x][y] == 'h') {
+						if (x-1 >= 0 && y-2 >= 0 && (board[x-1][y-2] == ' ' || isupper(board[x-1][y-2]))){ 
+							char temp = board[x-1][y-2];
+							board[x-1][y-2] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+1][y+1] = ' ';
-							board[x][y] = 'p';
-						}
-						if (isupper(board[x+1][y-1])){
-							board[x+1][y-1] = 'p';
-							board[x][y] = ' ';
-							valid_moves.push_back(board);
-							board[x+1][y-1] = ' ';
-							board[x][y] = 'p';
+							board[x-1][y-2] = temp;
+							board[x][y] = 'h';
 						}
 					}
 					if (board[x][y] == 'h') {
-						if (x-1 >= 0 && y-2 >= 0 && !islower(board[x-1][y-2])){ 
-							board[x-1][y-2] = 'h';
-							board[x][y] = ' ';
-							valid_moves.push_back(board);
-							board[x-1][y-2] = ' ';
-							board[x][y] = 'h';
-						}
-						if (x-1 >= 0 && y+2 < 8 && !islower(board[x-1][y+2])){ 
+						if (x-1 >= 0 && y+2 < 8 && (board[x-1][y+2] == ' ' || isupper(board[x-1][y+2]))){ 
+							char temp = board[x-1][y+2];
 							board[x-1][y+2] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x-1][y+2] = ' ';
+							board[x-1][y+2] = temp;
 							board[x][y] = 'h';
 						}
-						if (x+1 < 8 && y+2 < 8 && !islower(board[x+1][y+2])){
+					}
+					if (board[x][y] == 'h') {
+						if (x+1 < 8 && y+2 < 8 && (board[x+1][y+2] == ' ' || isupper(board[x+1][y+2]))){
+							char temp = board[x+1][y+2];
 							board[x+1][y+2] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+1][y+2] = ' ';
+							board[x+1][y+2] = temp;
 							board[x][y] = 'h';
 						}
-						if (x+1 < 8 && y-2 >= 0 && !islower(board[x+1][y-2])){
+					}
+					if (board[x][y] == 'h') {
+						if (x+1 < 8 && y-2 >= 0 && (board[x+1][y-2] == ' ' || isupper(board[x+1][y-2]))){
+							char temp = board[x+1][y-2];
 							board[x+1][y-2] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+1][y-2] = ' ';
+							board[x+1][y-2] = temp;
 							board[x][y] = 'h';
 						}
-						if (y-1 >= 0 && x-2 >= 0 && !islower(board[x-1][y-2])){
+					}
+					if (board[x][y] == 'h') {
+						if (y-2 >= 0 && x-1 >= 0 && (board[x-1][y-2] == ' ' || isupper(board[x-1][y-2]))){
+							char temp = board[x-1][y-2];
 							board[x-1][y-2] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x-1][y-2] = ' ';
+							board[x-1][y-2] = temp;
 							board[x][y] = 'h';
 						}
-						if (y-1 >= 0 && x-2 >= 0 && !islower(board[x-2][y-1])){
+					}////////////////////////////
+					if (board[x][y] == 'h') {
+						if (y-1 >= 0 && x-2 >= 0 && (board[x-2][y-1] == ' ' || isupper(board[x-2][y-1]))){
+							char temp = board[x-2][y-1];
 							board[x-2][y-1] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x-2][y-1] = ' ';
+							board[x-2][y-1] = temp;
 							board[x][y] = 'h';
 						}
-						if (y+1 < 8 && x-2 >= 0 && !islower(board[x-2][y+1])){
+					}
+					if (board[x][y] == 'h') {
+						if (y+1 < 8 && x-2 >= 0 && (board[x-2][y+1] == ' ' || isupper(board[x-2][y+1]))){
+							char temp = board[x-2][y+1];
 							board[x-2][y+1] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x-2][y+1] = ' ';
+							board[x-2][y+1] = temp;
 							board[x][y] = 'h';
 						}
-						if (y+1 < 8 && x+2 < 8 && !islower(board[x+2][y+1])){
+					}
+					if (board[x][y] == 'h') {
+						if (y+1 < 8 && x+2 < 8 && (board[x+2][y+1] == ' ' || isupper(board[x+2][y+1]))){
+							char temp = board[x+2][y+1];
 							board[x+2][y+1] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+2][y+1] = ' ';
+							board[x+2][y+1] = temp;
 							board[x][y] = 'h';
 						}
-						if (y-1 >= 0 && x+2 < 8 && !isupper(board[x+2][y-1])){
+					}
+					if (board[x][y] == 'h') {
+						if (y-1 >= 0 && x+2 < 8 && (board[x+2][y-1] == ' ' || isupper(board[x+2][y-1]))){
+							char temp = board[x+2][y-1];
 							board[x+2][y-1] = 'h';
 							board[x][y] = ' ';
 							valid_moves.push_back(board);
-							board[x+2][y-1] = ' ';
+							board[x+2][y-1] = temp;
 							board[x][y] = 'h';
 						}
 					}
 					if (board[x][y] == 'b') {
 						for (int i = 1; i < 8; i ++) {
 							if (x+i < 8 && y+i < 8 && board[x+i][y+i] == ' ') {
+								char temp = board[x+i][y+i];
 								board[x+i][y+i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y+i] = ' ';
+								board[x+i][y+i] = temp;
 								board[x][y] = 'b';
 							}
-							else if (x+i < 8 && y+i < 8 && isupper(board[x+i][y+i])) {
+							else if (x+i < 8 && y+i < 8 && !islower(board[x+i][y+i]) && board[x+i][y+i] != ' ') {
+								char temp = board[x+i][y+i];
 								board[x+i][y+i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y+i] = ' ';
+								board[x+i][y+i] = temp;
 								board[x][y] = 'b';
 								break;
 							} else break;
 						}
+					}
+					if (board[x][y] == 'b') {
 						for (int i = 1; i < 8; i ++) {
 							if (x+i < 8 && y-i >= 0 && board[x+i][y-i] == ' ') {
+								char temp = board[x+i][y-i];
 								board[x+i][y-i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y-i] = ' ';
+								board[x+i][y-i] = temp;
 								board[x][y] = 'b';
 							}
-							else if (x+i < 8 && y-i >= 0 && isupper(board[x+i][y-i])) {
+							else if (x+i < 8 && y-i >= 0 && !islower(board[x+i][y-i]) && board[x+i][y-i] != ' ') {
+								char temp = board[x+i][y-i];
 								board[x+i][y-i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y-i] = ' ';
+								board[x+i][y-i] = temp;
 								board[x][y] = 'b';
 								break;
 							} else break;
 						}
+					}
+					if (board[x][y] == 'b') {
 						for (int i = 1; i < 8; i ++) {
 							if (x-i >= 0 && y+i < 8 && board[x-i][y+i] == ' ') {
+								char temp = board[x-i][y+i];
 								board[x-i][y+i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y+i] = ' ';
+								board[x-i][y+i] = temp;
 								board[x][y] = 'b';
 							}
-							else if (x-i >= 0 && y+i < 8 && isupper(board[x-i][y+i])) {
+							else if (x-i >= 0 && y+i < 8 && !islower(board[x-i][y+i]) && board[x-i][y+i] != ' ') {
+								char temp = board[x-i][y+i];
 								board[x-i][y+i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y+i] = ' ';
+								board[x-i][y+i] = temp;
 								board[x][y] = 'b';
 								break;
 							} else break;
 						}
+					}
+					if (board[x][y] == 'b') {
 						for (int i = 1; i < 8; i ++) {
 							if (x-i >= 0 && y-i >= 0 && board[x-i][y-i] == ' ') {
-								board[x-i][y+i] = 'b';
-								board[x][y] = ' ';
-								valid_moves.push_back(board);
-								board[x-i][y+i] = ' ';
-								board[x][y] = 'b';
-							}
-							else if (x-i >= 0 && y-i >= 0 && isupper(board[x-i][y-i])) {
+								char temp = board[x-i][y-i];
 								board[x-i][y-i] = 'b';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y-i] = ' ';
+								board[x-i][y-i] = temp;
+								board[x][y] = 'b';
+							}
+							else if (x-i >= 0 && y-i >= 0 && !islower(board[x-i][y-i]) && board[x-i][y-i] != ' ') {
+								char temp = board[x-i][y-i];
+								board[x-i][y-i] = 'b';
+								board[x][y] = ' ';
+								valid_moves.push_back(board);
+								board[x-i][y-i] = temp;
 								board[x][y] = 'b';
 								break;
 							} else break;
@@ -208,72 +262,80 @@ class chessAI {
 					if (board[x][y] == 'r') {
 						for (int i = 1; i < 8; i ++) {
 							if (x+i < 8 && board[x+i][y] == ' '){
+								char temp = board[x+i][y];
 								board[x+i][y] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y] = ' ';
+								board[x+i][y] = temp;
 								board[x][y] = 'r';
 							}
 							else if (x+i < 8 && isupper(board[x+i][y])) {
+								char temp = board[x+i][y];
 								board[x+i][y] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x+i][y] = ' ';
+								board[x+i][y] = temp;
 								board[x][y] = 'r';
 								break;
 							} else break;
 						}
 						for (int i = 1; i < 8; i ++) {
 							if (x-i >= 0 && board[x-i][y] == ' '){
+								char temp = board[x-i][y];
 								board[x-i][y] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y] = ' ';
+								board[x-i][y] = temp;
 								board[x][y] = 'r';
 							}
 							else if (x-i >= 0 && isupper(board[x-i][y])) {
+								char temp = board[x-i][y];
 								board[x-i][y] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y] = ' ';
+								board[x-i][y] = temp;
 								board[x][y] = 'r';
 								break;
 							} else break;
 						}
 						for (int i = 1; i < 8; i ++) {
 							if (y+i < 8 && board[x][y+i] == ' '){
+								char temp = board[x][y+i];
 								board[x][y+i] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x][y+i] = ' ';
+								board[x][y+i] = temp;
 								board[x][y] = 'r';
 							}
 							else if (y+i < 8 && isupper(board[x][y+i])) {
+								char temp = board[x][y+i];
 								board[x][y+i] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x][y+i] = ' ';
+								board[x][y+i] = temp;
 								board[x][y] = 'r';
 								break;
 							} else break;
 						}
 						for (int i = 1; i < 8; i ++) {
 							if (y-i >= 0 && board[x][y-i] == ' '){
+								char temp = board[x][y-i];
 								board[x][y-i] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x][y-i] = ' ';
+								board[x][y-i] = temp;
 								board[x][y] = 'r';
 							}
 							else if (y-i >= 0 && isupper(board[x][y-i])) {
+								char temp = board[x][y-i];
 								board[x][y-i] = 'r';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x][y-i] = ' ';
+								board[x][y-i] = temp;
 								board[x][y] = 'r';
 								break;
 							} else break;
-						}
+						}/////////////////////////////////
 					}
 					if (board[x][y] == 'q') {
 						for (int i = 1; i < 8; i ++) {
@@ -397,10 +459,10 @@ class chessAI {
 						}
 						for (int i = 1; i < 8; i ++) {
 							if (x-i >= 0 && y-i >= 0 && board[x-i][y-i] == ' ') {
-								board[x-i][y+i] = 'q';
+								board[x-i][y-i] = 'q';
 								board[x][y] = ' ';
 								valid_moves.push_back(board);
-								board[x-i][y+i] = ' ';
+								board[x-i][y-i] = ' ';
 								board[x][y] = 'q';
 							}
 							else if (x-i >= 0 && y-i >= 0 && isupper(board[x-i][y-i])) {
@@ -465,5 +527,7 @@ class chessAI {
 					else if (islower(state[i][j])) result ++;
 				}
 			}
+			//std::cout << "heur= " << result << std::endl;
+			return result;
 		}
 };
