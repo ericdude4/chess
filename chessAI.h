@@ -7,6 +7,11 @@
 	a 2-d char vector array with the new board state after the computers move.
 */
 
+struct move {
+	std::vector<std::vector<char> > state;
+	int score;
+};
+
 class chessAI {
    public:
 	 	std::vector<std::vector<char> > board;
@@ -38,20 +43,21 @@ class chessAI {
 		std::vector<std::vector<char> > getMove(int ply){
 			std::vector<std::vector<std::vector<char> > > valid_moves;
 			terminal_found = false;
-			int heuristic = -1000;
-			int temp;
-			valid_moves = getValidMoves();
+			int heuristic = 100000;
+			move temp;
+			valid_moves = getValidMoves(board);
+			move comp_move;
 			for (int i = 0; i < valid_moves.size(); i++) {
-				temp = minimax(valid_moves[i], 4, -10000, 10000, true);
-				std::cout << "heur: " << temp << std::endl;
-				if (temp > heuristic) {
-					heuristic = temp;
-					best_board = valid_moves[i];
+				temp = minimax(valid_moves[i], 3, -50000, 50000, true);
+				if (temp.score < heuristic){
+					heuristic = temp.score;
+					comp_move.state = valid_moves[i];
+					comp_move.score = temp.score;
 				}
 			}
-			std::cout << "heuristic: " << heuristic << std::endl;
-			printBoard(best_board);
-			return best_board;
+			std::cout << "score: " << comp_move.score << std::endl;
+			printBoard(comp_move.state);
+			return comp_move.state;
 		}	 	
 	private:
 
@@ -65,99 +71,100 @@ class chessAI {
 			std::cout << std::endl;
 		}
 
-		//returns the larger of two integers as an integer
-		int max (int a, int b) {
-			if (a > b) return a;
-			else return b;
-		}
-		//returns the smaller of two integers as an integer
-		int min (int a, int b) {
-			if (a < b) return a;
-			else return b;
-		}
+		move minimax(std::vector<std::vector<char> > node, int depth, int a, int b, bool maxing) {
+			move best_move;
+			best_move.score = (maxing) ? a : b;
 
-		int minimax(std::vector<std::vector<char> > node, int depth, int a, int b, bool maxing){
-			if (depth == 0){
-				int node_eval = evaluate(node);
-				return node_eval;
-			}
-			if (maxing){
-				int v = -50000;
-				std::vector<std::vector<std::vector<char> > > valid_moves;
-				valid_moves = getValidMoves();
-				for (int i = 0; i < valid_moves.size(); i++) {
-					v = max(v, minimax(valid_moves[i], depth-1, a, b, false));
-					a = max(a, v);
-					if (b <= a) break; //prune
-				}
-				return v;
+			if (depth == 0) {
+				best_move.score = (maxing) ? evaluate(node) : -evaluate(node);
+				best_move.state = node;
 			} else {
-				int v = 50000;
-				std::vector<std::vector<std::vector<char> > > valid_human_moves;
-				valid_human_moves = getValidHumanMoves();
-				for (int i = 0; i < valid_human_moves.size(); i++) {
-					v = min(v, minimax(valid_human_moves[i], depth-1, a, b, true));
-					b = min(b, v);
-					if (b <= a) break;
+				if (maxing) {
+					best_move.score = a;
+					std::vector<std::vector<std::vector<char> > > valid_moves;
+					valid_moves = getValidHumanMoves(node);
+					for (int i = 0; i < valid_moves.size(); i++){
+						move v = minimax(valid_moves[i], depth - 1, best_move.score, b, false);
+						if (v.score > best_move.score) {
+							best_move.state = v.state;
+							best_move.score = v.score;
+						}
+						if (b <= best_move.score) break;
+					}
+				} else {
+					int best = b;
+					std::vector<std::vector<std::vector<char> > > valid_moves;
+					valid_moves = getValidMoves(node);
+					for (int i = 0; i < valid_moves.size(); i++){
+						move v = minimax(valid_moves[i], depth - 1, a, best_move.score, true);
+						if (v.score < best_move.score) {
+							best_move.score = v.score;
+							best_move.state = v.state;
+						}
+						if (best_move.score <= a) break;
+					}
 				}
-				return v;
 			}
+			return best_move;
 		}
 
 		int evaluate(std::vector<std::vector<char> > state) {
-			int hum_result = 0;
-			int comp_result = 0;
+			/*int hum_result = 0;
+			int comp_result = 0;*/
+			int result = 0;
 			for (int i = 0; i < state.size(); i++) {
 				for (int j = 0; j < state[i].size(); j++) {
 					if (isupper(state[i][j])) {
 						if (state[i][j] == 'P'){
-							hum_result += pawn_val + pawn_mat_human[i][j];
+							result -= pawn_val + pawn_mat_human[i][j];
 						}
 						else if (state[i][j] == 'N'){
-							hum_result += knight_val + knight_mat_human[i][j];
+							result -= knight_val + knight_mat_human[i][j];
 						}
 						else if (state[i][j] == 'B'){
-							hum_result += bishop_val + bishop_mat_human[i][j];
+							result -= bishop_val + bishop_mat_human[i][j];
 						}
 						else if (state[i][j] == 'R'){
-							hum_result += rook_val + rook_mat_human[i][j];
+							result -= rook_val + rook_mat_human[i][j];
 						}
 						else if (state[i][j] == 'Q'){
-							hum_result += queen_val + queen_mat_human[i][j];
+							result -= queen_val + queen_mat_human[i][j];
 						}
 						else if (state[i][j] == 'K'){
-							hum_result += king_val + king_mat_human[i][j];
+							result -= king_val + king_mat_human[i][j];
 						}
 					}
 					if (islower(state[i][j])) {
 						if (state[i][j] == 'p'){
-							comp_result += pawn_val + pawn_mat[i][j];
+							result += pawn_val + pawn_mat[i][j];
 						}
 						else if (state[i][j] == 'n'){
-							comp_result += knight_val + knight_mat[i][j];
+							result += knight_val + knight_mat[i][j];
 						}
 						else if (state[i][j] == 'b'){
-							comp_result += bishop_val + bishop_mat[i][j];
+							result += bishop_val + bishop_mat[i][j];
 						}
 						else if (state[i][j] == 'r'){
-							comp_result += rook_val + rook_mat[i][j];
+							result += rook_val + rook_mat[i][j];
 						}
 						else if (state[i][j] == 'q'){
-							comp_result += queen_val + queen_mat[i][j];
+							result += queen_val + queen_mat[i][j];
 						}
 						else if (state[i][j] == 'k'){
-							comp_result += king_val + king_mat[i][j];
+							result += king_val + king_mat[i][j];
 						}
 					}
 				}
 			}
 			//std::cout << "heur= " << result << std::endl;
-			return comp_result - hum_result;
+			/*if (p == -1) return hum_result - comp_result;
+			else return comp_result-hum_result;*/
+			return result;
 		}
 
 
 
-		std::vector<std::vector<std::vector<char> > > getValidMoves(){
+		std::vector<std::vector<std::vector<char> > > getValidMoves(std::vector<std::vector<char> > board){
 			std::vector<std::vector<std::vector<char> > > valid_moves;
 			for (int x = 0; x < 8; x++) {
 				for (int y = 0; y < 8; y++) {
@@ -600,12 +607,151 @@ class chessAI {
 							} else break;
 						}
 					}
+					if (board[x][y] == 'k') {
+						int i = 1;
+						if (x+i < 8 && board[x+i][y] == ' '){
+							char temp = board[x+i][y];
+							board[x+i][y] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x+i < 8 && isupper(board[x+i][y])) {
+							char temp = board[x+i][y];
+							board[x+i][y] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (x-i >= 0 && board[x-i][y] == ' '){
+							char temp = board[x-i][y];
+							board[x-i][y] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x-i >= 0 && isupper(board[x-i][y])) {
+							char temp = board[x-i][y];
+							board[x-i][y] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (y+i < 8 && board[x][y+i] == ' '){
+							char temp = board[x][y+i];
+							board[x][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y+i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (y+i < 8 && isupper(board[x][y+i])) {
+							char temp = board[x][y+i];
+							board[x][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y+i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (y-i >= 0 && board[x][y-i] == ' '){
+							char temp = board[x][y-i];
+							board[x][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y-i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (y-i >= 0 && isupper(board[x][y-i])) {
+							char temp = board[x][y-i];
+							board[x][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y-i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (x+i < 8 && y+i < 8 && board[x+i][y+i] == ' ') {
+							char temp = board[x+i][y+i];
+							board[x+i][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y+i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x+i < 8 && y+i < 8 && isupper(board[x+i][y+i])) {
+							char temp = board[x+i][y+i];
+							board[x+i][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y+i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (x+i < 8 && y-i >= 0 && board[x+i][y-i] == ' ') {
+							char temp = board[x+i][y-i];
+							board[x+i][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y-i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x+i < 8 && y-i >= 0 && isupper(board[x+i][y-i])) {
+							char temp = board[x+i][y-i];
+							board[x+i][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y-i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (x-i >= 0 && y+i < 8 && board[x-i][y+i] == ' ') {
+							char temp = board[x-i][y+i];
+							board[x-i][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y+i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x-i >= 0 && y+i < 8 && isupper(board[x-i][y+i])) {
+							char temp = board[x-i][y+i];
+							board[x-i][y+i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y+i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+						if (x-i >= 0 && y-i >= 0 && board[x-i][y-i] == ' ') {
+							char temp = board[x-i][y-i];
+							board[x-i][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y-i] = temp;
+							board[x][y] = 'k';
+						}
+						else if (x-i >= 0 && y-i >= 0 && isupper(board[x-i][y-i])) {
+							char temp = board[x-i][y-i];
+							board[x-i][y-i] = 'k';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y-i] = temp;
+							board[x][y] = 'k';
+							break;
+						} else break;
+					}
 				}
 			}
 			return valid_moves;
 		}
 
-		std::vector<std::vector<std::vector<char> > > getValidHumanMoves(){
+		std::vector<std::vector<std::vector<char> > > getValidHumanMoves(std::vector<std::vector<char> > board){
 			std::vector<std::vector<std::vector<char> > > valid_moves;
 			for (int x = 0; x < 8; x++) {
 				for (int y = 0; y < 8; y++) {
@@ -1047,6 +1193,145 @@ class chessAI {
 								break;
 							} else break;
 						}
+					}
+					if (board[x][y] == 'K') {
+						int i = 1;
+						if (x+i < 8 && board[x+i][y] == ' '){
+							char temp = board[x+i][y];
+							board[x+i][y] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x+i < 8 && isupper(board[x+i][y])) {
+							char temp = board[x+i][y];
+							board[x+i][y] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (x-i >= 0 && board[x-i][y] == ' '){
+							char temp = board[x-i][y];
+							board[x-i][y] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x-i >= 0 && isupper(board[x-i][y])) {
+							char temp = board[x-i][y];
+							board[x-i][y] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (y+i < 8 && board[x][y+i] == ' '){
+							char temp = board[x][y+i];
+							board[x][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y+i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (y+i < 8 && isupper(board[x][y+i])) {
+							char temp = board[x][y+i];
+							board[x][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y+i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (y-i >= 0 && board[x][y-i] == ' '){
+							char temp = board[x][y-i];
+							board[x][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y-i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (y-i >= 0 && isupper(board[x][y-i])) {
+							char temp = board[x][y-i];
+							board[x][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x][y-i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (x+i < 8 && y+i < 8 && board[x+i][y+i] == ' ') {
+							char temp = board[x+i][y+i];
+							board[x+i][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y+i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x+i < 8 && y+i < 8 && isupper(board[x+i][y+i])) {
+							char temp = board[x+i][y+i];
+							board[x+i][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y+i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (x+i < 8 && y-i >= 0 && board[x+i][y-i] == ' ') {
+							char temp = board[x+i][y-i];
+							board[x+i][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y-i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x+i < 8 && y-i >= 0 && isupper(board[x+i][y-i])) {
+							char temp = board[x+i][y-i];
+							board[x+i][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x+i][y-i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (x-i >= 0 && y+i < 8 && board[x-i][y+i] == ' ') {
+							char temp = board[x-i][y+i];
+							board[x-i][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y+i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x-i >= 0 && y+i < 8 && isupper(board[x-i][y+i])) {
+							char temp = board[x-i][y+i];
+							board[x-i][y+i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y+i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
+						if (x-i >= 0 && y-i >= 0 && board[x-i][y-i] == ' ') {
+							char temp = board[x-i][y-i];
+							board[x-i][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y-i] = temp;
+							board[x][y] = 'K';
+						}
+						else if (x-i >= 0 && y-i >= 0 && isupper(board[x-i][y-i])) {
+							char temp = board[x-i][y-i];
+							board[x-i][y-i] = 'K';
+							board[x][y] = ' ';
+							valid_moves.push_back(board);
+							board[x-i][y-i] = temp;
+							board[x][y] = 'K';
+							break;
+						} else break;
 					}
 				}
 			}

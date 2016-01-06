@@ -7,9 +7,6 @@
 #include <iostream>
 #include "objParser.h"
 #include "chessAI.h"
-/*#include "vertex.h"
-#include "face.h"
-#include "normal.h"*/
 using namespace std;
 
 struct object {
@@ -41,6 +38,8 @@ int selected_piece_x, selected_piece_y;
 char selected_piece;
 std::vector<std::vector<bool> > possible_moves;
 chessAI kasparov;
+int ply;
+int colour;
 
 void printBoard(){
 	for (int i = 0; i < 8; i++){
@@ -49,44 +48,6 @@ void printBoard(){
 		}
 		cout << endl;
 	}
-}
-
-void initBoard(){	//capitol letters represent light pieces
-	std::vector<board_space> temp_vector;
-	std::vector<bool> temp_bool;
-	board_space temp_space;
-	for (int i = 0; i < 8; i++){
-		for (int j = 0; j < 8; j++){
-			temp_space.x = i;
-			temp_space.y = j;
-			temp_space.piece = ' ';
-			temp_space.active = false;
-			temp_vector.push_back(temp_space);
-			temp_bool.push_back(false);
-		}
-		possible_moves.push_back(temp_bool);
-		board.push_back(temp_vector);
-		temp_vector.clear();
-		temp_bool.clear();
-	}
-	board[0][0].piece = 'r';
-	board[0][1].piece = 'h';	// h = horse (knight) because king starts with k
-	board[0][2].piece = 'b';
-	board[0][4].piece = 'k';
-	board[0][3].piece = 'q';
-	board[0][5].piece = 'b';
-	board[0][6].piece = 'h';
-	board[0][7].piece = 'r';
-	for (int i = 0; i < 8; i++) board[1][i].piece = 'p';
-	board[7][0].piece = 'R';
-	board[7][1].piece = 'H';	// h = horse (knight) because king starts with k
-	board[7][2].piece = 'B';
-	board[7][4].piece = 'K';
-	board[7][3].piece = 'Q';
-	board[7][5].piece = 'B';
-	board[7][6].piece = 'H';
-	board[7][7].piece = 'R';
-	for (int i = 0; i < 8; i++) board[6][i].piece = 'P';
 }
 
 void clearPossibleMoves(){
@@ -592,51 +553,63 @@ void drawPieces() {
 		for (int j = 0; j < 8; j++) {
 			switch (board[i][j].piece) {
 				case 'p':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(pawn, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'P' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(pawn, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'r':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(rook, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'R' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(rook, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'b':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(bishop, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'B' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(bishop, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'q':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(queen, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'Q' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(queen, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'k':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(king, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'K' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(king, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'h':
-					glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					drawPiece(knight, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 				case 'H' :
-				 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 				 	drawPiece(knight, board[i][j].y - 4, board[i][j].x - 4);
 					break;
 			}
@@ -648,7 +621,67 @@ void drawPieces() {
 	glutSwapBuffers();
 }
 
+void initBoard(){	//capitol letters represent light pieces
+	std::vector<board_space> temp_vector;
+	std::vector<bool> temp_bool;
+	board_space temp_space;
+	for (int i = 0; i < 8; i++){
+		for (int j = 0; j < 8; j++){
+			temp_space.x = i;
+			temp_space.y = j;
+			temp_space.piece = ' ';
+			temp_space.active = false;
+			temp_vector.push_back(temp_space);
+			temp_bool.push_back(false);
+		}
+		possible_moves.push_back(temp_bool);
+		board.push_back(temp_vector);
+		temp_vector.clear();
+		temp_bool.clear();
+	}
+	board[0][0].piece = 'r';
+	board[0][1].piece = 'h';	// h = horse (knight) because king starts with k
+	board[0][2].piece = 'b';
+	board[0][4].piece = 'k';
+	board[0][3].piece = 'q';
+	board[0][5].piece = 'b';
+	board[0][6].piece = 'h';
+	board[0][7].piece = 'r';
+	for (int i = 0; i < 8; i++) board[1][i].piece = 'p';
+	board[7][0].piece = 'R';
+	board[7][1].piece = 'H';	// h = horse (knight) because king starts with k
+	board[7][2].piece = 'B';
+	board[7][4].piece = 'K';
+	board[7][3].piece = 'Q';
+	board[7][5].piece = 'B';
+	board[7][6].piece = 'H';
+	board[7][7].piece = 'R';
+	for (int i = 0; i < 8; i++) board[6][i].piece = 'P';
+	if (colour != 0) {
+		vector<vector<char> > char_board;
+		cout << "---------comp went first-----------" << endl;
+		for (int i = 0; i < 8; i ++){
+			vector<char> temp;
+			for (int j = 0; j < 8; j++){
+				temp.push_back(board[i][j].piece);
+				cout << board[i][j].piece;
+			} cout << endl;
+			char_board.push_back(temp);
+			temp.clear();
+		}
+		cout << "-----------------------------------" << endl;
+		kasparov.setBoard(char_board);
+		char_board = kasparov.getMove(ply);
+		copyCompMoveToMainBoard(char_board);
+	}
+}
+
 main(int argc, char **argv) {
+
+	cout << "set a ply: ";
+	cin >> ply;
+	cout << "select colour (0 = white, 1 = black): ";
+	cin >> colour;
 
 	initPieces();
 	initBoard();
