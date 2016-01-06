@@ -388,7 +388,7 @@ void setActive(float x, float y) {	//this sets the location clicked as "active" 
 			}
 			cout << "--------------------" << endl;
 			kasparov.setBoard(char_board);
-			char_board = kasparov.getMove(2);
+			char_board = kasparov.getMove(ply);
 			copyCompMoveToMainBoard(char_board);
 		}
 		else if (board[res_y+4][res_x+4].piece != ' ' && isupper(board[res_y+4][res_x+4].piece)){

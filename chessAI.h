@@ -48,14 +48,15 @@ class chessAI {
 			valid_moves = getValidMoves(board);
 			move comp_move;
 			for (int i = 0; i < valid_moves.size(); i++) {
-				temp = minimax(valid_moves[i], 3, -50000, 50000, true);
+				if (ply % 2 == 0) temp = minimax(valid_moves[i], ply-1, -50000, 50000, true);
+				else temp = minimax(valid_moves[i], ply-1, -50000, 50000, false);
 				if (temp.score < heuristic){
 					heuristic = temp.score;
 					comp_move.state = valid_moves[i];
 					comp_move.score = temp.score;
 				}
 			}
-			std::cout << "score: " << comp_move.score << std::endl;
+			std::cout << "score: " << comp_move.score << " ply:" << ply << std::endl;
 			printBoard(comp_move.state);
 			return comp_move.state;
 		}	 	
@@ -109,8 +110,6 @@ class chessAI {
 		}
 
 		int evaluate(std::vector<std::vector<char> > state) {
-			/*int hum_result = 0;
-			int comp_result = 0;*/
 			int result = 0;
 			for (int i = 0; i < state.size(); i++) {
 				for (int j = 0; j < state[i].size(); j++) {
@@ -156,9 +155,6 @@ class chessAI {
 					}
 				}
 			}
-			//std::cout << "heur= " << result << std::endl;
-			/*if (p == -1) return hum_result - comp_result;
-			else return comp_result-hum_result;*/
 			return result;
 		}
 
