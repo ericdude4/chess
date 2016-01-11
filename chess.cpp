@@ -360,8 +360,6 @@ void getPossibleMoves(int x, int y, char c){
 	}
 }
 
-void wasteTime() {}
-
 void animateMovement(vector<vector<board_space> > old_board) {
 	float start_x, start_y, end_x, end_y;
 	char moved_piece;
@@ -406,22 +404,18 @@ void copyCompMoveToMainBoard(vector<vector<char> > char_board) {
 			board[i][j].piece = char_board[i][j];
 		}
 	}
-	//animateMovement(old_board);
 }
 
 void getComputerMove() {
 	vector<vector<char> > char_board;
-	cout << "--------------------" << endl;
 	for (int i = 0; i < 8; i ++){
 		vector<char> temp;
 		for (int j = 0; j < 8; j++){
 			temp.push_back(board[i][j].piece);
-			cout << board[i][j].piece;
-		} cout << endl;
+		}
 		char_board.push_back(temp);
 		temp.clear();
 	}
-	cout << "--------------------" << endl;
 	kasparov.setBoard(char_board);
 	char_board = kasparov.getMove(ply);
 	copyCompMoveToMainBoard(char_board);
@@ -768,17 +762,14 @@ void initBoard(){	//capitol letters represent light pieces
 	for (int i = 0; i < 8; i++) board[6][i].piece = 'P';
 	if (colour != 0) {
 		vector<vector<char> > char_board;
-		cout << "---------comp went first-----------" << endl;
 		for (int i = 0; i < 8; i ++){
 			vector<char> temp;
 			for (int j = 0; j < 8; j++){
 				temp.push_back(board[i][j].piece);
-				cout << board[i][j].piece;
-			} cout << endl;
+			}
 			char_board.push_back(temp);
 			temp.clear();
 		}
-		cout << "-----------------------------------" << endl;
 		kasparov.setBoard(char_board);
 		char_board = kasparov.getMove(ply);
 		copyCompMoveToMainBoard(char_board);
@@ -824,8 +815,12 @@ main(int argc, char **argv) {
 
 	cout << "set a ply: ";
 	cin >> ply;
+	if (ply <= 0) ply = 4;
 	cout << "select colour (0 = white, 1 = black): ";
 	cin >> colour;
+	cout << "Welcome to 3D Chess by Eric Froese!" << endl;
+	cout << "Space Bar = Return to User POV" << endl;
+	cout << "q = Quit" << endl;
 	current_animation.active = false;
 	prev_x = -1;
 	total_x_rot = 0.0;
