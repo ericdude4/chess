@@ -3,8 +3,10 @@ class vertex {
 		this class stores the vertices of a triangle
 	*/
 private:
-	float x, y, z;
+	
 public:
+	float x, y, z;
+	
 	vertex() {}
 
 	void setXYZ (float x_in, float y_in, float z_in) {

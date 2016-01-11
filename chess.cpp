@@ -7,20 +7,32 @@
 #include <iostream>
 #include "objParser.h"
 #include "chessAI.h"
+#include <chrono>
+#include <thread>
 using namespace std;
 
 struct object {
 	std::vector<vertex> v;
 	std::vector<normal> n;
 	std::vector<face> f;
-}; object pawn, king, bishop, knight, rook, queen, square;
+}; object pawn, king, bishop, knight, rook, queen, square, eks, hand;
 
 struct board_space {
-	int x, y;
+	float x, y;
 	bool active;
 	bool enpassantable;
 	object model;
 	char piece;
+};
+
+struct animation {
+	float start_x, start_y, end_x, end_y;
+	char piece;
+	float rise, run;
+	bool active;
+	int frame;
+	std::vector<std::vector<board_space> > old_board;
+	std::vector<std::vector<board_space> > new_board;
 };
 
 GLfloat mat_ambient[] = {0.0215, 0.1745, 0.0215, 1.0};
@@ -40,6 +52,9 @@ std::vector<std::vector<bool> > possible_moves;
 chessAI kasparov;
 int ply;
 int colour;
+animation current_animation;
+bool computer_turn;
+int prev_x, total_x_rot;
 
 void printBoard(){
 	for (int i = 0; i < 8; i++){
@@ -55,6 +70,17 @@ void clearPossibleMoves(){
 		for (int j = 0; j < 8; j++) {
 			possible_moves[i][j] = false;
 		}
+	}
+}
+
+void drawPiece(object piece, float x, float z) {
+	for (int i=0; i < piece.f.size(); ++i) {
+		glNormal3f(piece.n[piece.f[i].getB1()].getI(), piece.n[piece.f[i].getB2()].getJ(), piece.n[piece.f[i].getB3()].getK());
+		glBegin(GL_POLYGON);  
+			glVertex3f(x + piece.v[piece.f[i].getA1()].getX(), piece.v[piece.f[i].getA1()].getY(), z + piece.v[piece.f[i].getA1()].getZ());
+			glVertex3f(x + piece.v[piece.f[i].getA2()].getX(), piece.v[piece.f[i].getA2()].getY(), z + piece.v[piece.f[i].getA2()].getZ());
+			glVertex3f(x + piece.v[piece.f[i].getA3()].getX(), piece.v[piece.f[i].getA3()].getY(), z + piece.v[piece.f[i].getA3()].getZ());
+		glEnd();
 	}
 }
 
@@ -334,12 +360,71 @@ void getPossibleMoves(int x, int y, char c){
 	}
 }
 
+void wasteTime() {}
+
+void animateMovement(vector<vector<board_space> > old_board) {
+	float start_x, start_y, end_x, end_y;
+	char moved_piece;
+	for (int i = 0; i < 8; i ++) {
+		for (int j = 0; j < 8; j ++) {
+			if (old_board[i][j].piece != board[i][j].piece && board[i][j].piece != ' ') {	//this must be the destination
+				end_x = i;
+				end_y = j;
+				moved_piece = board[i][j].piece;
+			}
+			if (old_board[i][j].piece != board[i][j].piece && board[i][j].piece == ' ') {	//this must be start
+				start_x = i;
+				start_y = j;
+			}
+		}
+	}
+	float rise, run;
+	rise = end_y - start_y;
+	run = end_x - start_x;
+	run = run / 25;
+	rise = rise / 25;
+
+	current_animation.start_x = start_x;
+	current_animation.start_y = start_y;
+	current_animation.end_x = end_x;
+	current_animation.end_y = end_y;
+	current_animation.rise = rise;
+	current_animation.run = run;
+	current_animation.active = true;
+	current_animation.frame = 0;
+	current_animation.old_board = old_board;
+	current_animation.new_board = board;
+	current_animation.piece = moved_piece;
+
+	glutPostRedisplay();
+}
+
 void copyCompMoveToMainBoard(vector<vector<char> > char_board) {
+	vector<vector<board_space> > old_board = board;
 	for (int i = 0; i < 8; i ++) {
 		for (int j = 0; j < 8; j++) {
 			board[i][j].piece = char_board[i][j];
 		}
 	}
+	//animateMovement(old_board);
+}
+
+void getComputerMove() {
+	vector<vector<char> > char_board;
+	cout << "--------------------" << endl;
+	for (int i = 0; i < 8; i ++){
+		vector<char> temp;
+		for (int j = 0; j < 8; j++){
+			temp.push_back(board[i][j].piece);
+			cout << board[i][j].piece;
+		} cout << endl;
+		char_board.push_back(temp);
+		temp.clear();
+	}
+	cout << "--------------------" << endl;
+	kasparov.setBoard(char_board);
+	char_board = kasparov.getMove(ply);
+	copyCompMoveToMainBoard(char_board);
 }
 
 void setActive(float x, float y) {	//this sets the location clicked as "active" (currently selected)
@@ -369,27 +454,14 @@ void setActive(float x, float y) {	//this sets the location clicked as "active" 
 
 	if (res_x != -5 && res_y != -5) {
 		if (!isupper(board[res_y+4][res_x+4].piece) && possible_moves[res_x+4][res_y+4] && a_piece_is_selected){
+			vector<vector<board_space> > old_board = board;
 			board[selected_piece_x][selected_piece_y].piece = ' ';
 			board[res_y+4][res_x+4].piece = selected_piece;
 			a_piece_is_selected = false;
 			clearPossibleMoves();
 			glutPostRedisplay();
-			//get computer move.
-			vector<vector<char> > char_board;
-			cout << "--------------------" << endl;
-			for (int i = 0; i < 8; i ++){
-				vector<char> temp;
-				for (int j = 0; j < 8; j++){
-					temp.push_back(board[i][j].piece);
-					cout << board[i][j].piece;
-				} cout << endl;
-				char_board.push_back(temp);
-				temp.clear();
-			}
-			cout << "--------------------" << endl;
-			kasparov.setBoard(char_board);
-			char_board = kasparov.getMove(ply);
-			copyCompMoveToMainBoard(char_board);
+			animateMovement(old_board);
+			computer_turn = true;
 		}
 		else if (board[res_y+4][res_x+4].piece != ' ' && isupper(board[res_y+4][res_x+4].piece)){
 			getPossibleMoves(res_x+4, res_y+4, board[res_y+4][res_x+4].piece);
@@ -415,7 +487,9 @@ void mouse(int btn, int state, int x, int y) {
 
    if (state == GLUT_DOWN) {
       if (btn==GLUT_LEFT_BUTTON) {
-  	  	setActive(adjusted_x, adjusted_y);
+      	if (total_x_rot == 0.0){
+  	  		setActive(adjusted_x, adjusted_y);
+      	}
   	  	glutPostRedisplay();
       }
       else if (btn == GLUT_RIGHT_BUTTON) {
@@ -470,21 +544,18 @@ void initPieces() {
 	p.setFile(filerook);
 	p.parseDatFile();
 	rook.v = p.getVertices(); rook.n = p.getNormals(); rook.f = p.getFaces();
-	char filesquare[] = "objects/square.obj";
+	char filesquare[] = "objects/square2.obj";
 	p.setFile(filesquare);
 	p.parseDatFile();
 	square.v = p.getVertices(); square.n = p.getNormals(); square.f = p.getFaces();
-}
-
-void drawPiece(object piece, float x, float z) {
-	for (int i=0; i < piece.f.size(); ++i) {
-		glNormal3f(piece.n[piece.f[i].getB1()].getI(), piece.n[piece.f[i].getB2()].getJ(), piece.n[piece.f[i].getB3()].getK());
-		glBegin(GL_POLYGON);  
-			glVertex3f(x + piece.v[piece.f[i].getA1()].getX(), piece.v[piece.f[i].getA1()].getY(), z + piece.v[piece.f[i].getA1()].getZ());
-			glVertex3f(x + piece.v[piece.f[i].getA2()].getX(), piece.v[piece.f[i].getA2()].getY(), z + piece.v[piece.f[i].getA2()].getZ());
-			glVertex3f(x + piece.v[piece.f[i].getA3()].getX(), piece.v[piece.f[i].getA3()].getY(), z + piece.v[piece.f[i].getA3()].getZ());
-		glEnd();
-	}
+	char filex[] = "objects/x.obj";
+	p.setFile(filex);
+	p.parseDatFile();
+	eks.v = p.getVertices(); eks.n = p.getNormals(); eks.f = p.getFaces();
+	char filehand[] = "objects/hand.obj";
+	p.setFile(filehand);
+	p.parseDatFile();
+	hand.v = p.getVertices(); hand.n = p.getNormals(); hand.f = p.getFaces();
 }
 
 void drawBoard(){
@@ -539,6 +610,14 @@ void drawBoard(){
 	}
 }
 
+void clearAnimation() {
+	current_animation.active = false;
+	current_animation.rise = 0.0;
+	current_animation.run = 0.0;
+	board[current_animation.end_x][current_animation.end_y].piece = current_animation.piece;
+	board = current_animation.new_board;
+}
+
 void drawPieces() {
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
@@ -549,68 +628,76 @@ void drawPieces() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 
+	if (current_animation.active) {
+		board = current_animation.old_board;
+		board[current_animation.start_x][current_animation.start_y].x += (current_animation.run * current_animation.frame);
+		board[current_animation.start_x][current_animation.start_y].y += (current_animation.rise * current_animation.frame);
+		current_animation.frame ++;
+	}
+
 	for (int i = 0; i < 8; i ++) {
 		for (int j = 0; j < 8; j++) {
+			
 			switch (board[i][j].piece) {
 				case 'p':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(pawn, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(pawn, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'P' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(pawn, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(pawn, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'r':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(rook, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(rook, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'R' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(rook, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(rook, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'b':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(bishop, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(bishop, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'B' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(bishop, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(bishop, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'q':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(queen, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(queen, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'Q' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(queen, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(queen, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'k':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(king, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(king, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'K' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(king, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(king, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'h':
 					if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
-					drawPiece(knight, board[i][j].y - 4, board[i][j].x - 4);
+					drawPiece(knight, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 				case 'H' :
 				 	if (colour == 0) glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
 					else glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_dark);
-				 	drawPiece(knight, board[i][j].y - 4, board[i][j].x - 4);
+				 	drawPiece(knight, board[i][j].y - 4.0, board[i][j].x - 4.0);
 					break;
 			}
 		}
@@ -618,7 +705,29 @@ void drawPieces() {
 
 	drawBoard();
 
+	if (total_x_rot != 0.0) {
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse_light);
+		drawPiece(hand, 0.0, 0.0);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, possible_move_colour);
+		drawPiece(eks, 0.0, 0.0);
+	}
+
 	glutSwapBuffers();
+
+	if (current_animation.active) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		glutPostRedisplay();
+		if (current_animation.frame > 25) {
+			clearAnimation();
+			glutPostRedisplay();
+			vector<vector<board_space> > old_board = board;
+			if (computer_turn) {
+				getComputerMove();
+				animateMovement(old_board);
+				computer_turn = false;
+			}
+		}
+	}
 }
 
 void initBoard(){	//capitol letters represent light pieces
@@ -627,8 +736,8 @@ void initBoard(){	//capitol letters represent light pieces
 	board_space temp_space;
 	for (int i = 0; i < 8; i++){
 		for (int j = 0; j < 8; j++){
-			temp_space.x = i;
-			temp_space.y = j;
+			temp_space.x = (float) i;
+			temp_space.y = (float) j;
 			temp_space.piece = ' ';
 			temp_space.active = false;
 			temp_vector.push_back(temp_space);
@@ -676,12 +785,50 @@ void initBoard(){	//capitol letters represent light pieces
 	}
 }
 
+void keyboard(unsigned char key, int x, int y) {
+
+	switch (key){
+		case ' ':
+			glRotatef(0.0, 1.0, 0.0, 0.0);
+  			glRotatef(total_x_rot, 0.0, 1.0, 0.0);
+  			glRotatef(0.0, 0.0, 0.0, 1.0);
+  			total_x_rot = 0.0;
+			glutPostRedisplay();
+			break;
+
+		case 0x1B:
+			case 'q':
+			case 'Q':
+			exit(0);
+			break;
+   }
+}
+
+
+void drag(int x, int y) {
+	int dif_x, dif_y;
+	if (prev_x != -1) {
+		dif_x = x - prev_x;
+		glRotatef(0.0, 1.0, 0.0, 0.0);
+  		glRotatef(-dif_x, 0.0, 1.0, 0.0);
+  		glRotatef(0.0, 0.0, 0.0, 1.0);
+		glutPostRedisplay();
+		total_x_rot += dif_x;
+		prev_x = x;
+	} else {
+		prev_x = x;
+	}
+}
+
 main(int argc, char **argv) {
 
 	cout << "set a ply: ";
 	cin >> ply;
 	cout << "select colour (0 = white, 1 = black): ";
 	cin >> colour;
+	current_animation.active = false;
+	prev_x = -1;
+	total_x_rot = 0.0;
 
 	initPieces();
 	initBoard();
@@ -690,18 +837,18 @@ main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitWindowSize(500, 500);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-	glutCreateWindow("Chess by Eric Froese");
+	glutCreateWindow("3D Chess by Eric Froese");
 	glutMouseFunc(mouse);
+	glutMotionFunc(drag);
+	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(drawPieces);
-	//glutIdleFunc(drawcube); 
 
 	glMatrixMode(GL_PROJECTION);
-	glOrtho(-5.0, 5.0, -5.0, 5.0, -5.0, 5.0);
+	glOrtho(-5.0, 5.0, -5.0, 5.0, -7.0, 7.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glRotatef(50.0, 1.0, 0.0, 0.0);
-	//glRotatef(30.0, 0.0, 1.0, 0.0); 
-	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClearColor(0.1, 0.1, 0.1, 1.0);
 	glEnable(GL_DEPTH_TEST);
 	myLightInit();
 
